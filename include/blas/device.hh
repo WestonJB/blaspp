@@ -720,4 +720,22 @@ void conj(
 
 }  // namespace blas
 
+#if defined(BLAS_HAVE_SYCL)
+template <typename scalar_t>
+void conj(
+    int64_t n,
+    scalar_t* src, int64_t inc_src,
+    scalar_t* dst, int64_t inc_dst,
+    blas::Queue& queue )
+{
+    if (n <= 0) return;
+    auto& q = queue.stream();
+    q.submit([&](sycl::handler& h) {
+        h.parallel_for(sycl::range<1>(n), [=](sycl::id<1> i) {
+            dst[i * inc_dst] = sycl::conj(src[i * inc_src]);
+        });
+    });
+}
+#endif
+
 #endif        //  #ifndef BLAS_DEVICE_HH
